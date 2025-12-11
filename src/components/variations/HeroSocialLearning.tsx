@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isLightColor } from "@/lib/utils";
 
 interface HeroSocialLearningProps {
     tagline?: string;
@@ -33,28 +34,33 @@ export function HeroSocialLearning({ props }: { props: HeroSocialLearningProps }
         accentColor = "#FCD34D",
     } = props;
 
+    const isDark = !isLightColor(bgColor);
+
     return (
         <section className="py-8 cq-md:py-16 cq-lg:py-24" style={{ backgroundColor: bgColor }}>
             <div className="px-4 mx-auto max-w-7xl cq-sm:px-6 cq-lg:px-8">
                 <div className="grid items-center grid-cols-1 gap-8 cq-lg:gap-12 cq-lg:grid-cols-2">
                     {/* Text Content */}
                     <div className="space-y-4 cq-sm:space-y-6">
-                        <p className="text-xs cq-sm:text-base font-semibold tracking-wider text-blue-600 uppercase break-words">
+                        <p className={`text-xs cq-sm:text-base font-semibold tracking-wider uppercase break-words ${isDark ? 'text-blue-400' : 'text-blue-600'
+                            }`}>
                             {tagline}
                         </p>
 
-                        <h1 className="text-2xl cq-sm:text-4xl cq-md:text-5xl cq-lg:text-6xl cq-xl:text-7xl font-bold text-black leading-tight break-words">
+                        <h1 className={`text-2xl cq-sm:text-4xl cq-md:text-5xl cq-lg:text-6xl cq-xl:text-7xl font-bold leading-tight break-words ${isDark ? 'text-white' : 'text-black'
+                            }`}>
                             {title}
                         </h1>
 
-                        <p className="text-sm cq-sm:text-base cq-lg:text-lg text-black break-words">
+                        <p className={`text-sm cq-sm:text-base cq-lg:text-lg break-words ${isDark ? 'text-gray-300' : 'text-black'
+                            }`}>
                             {subtitle}
                         </p>
 
                         <div className="flex flex-col cq-sm:flex-row items-start cq-sm:items-center gap-4 pt-4">
                             <Link
                                 href={ctaLink}
-                                className="inline-flex items-center justify-center px-6 py-3 cq-sm:py-4 font-semibold text-black transition-all duration-200 rounded-full text-sm cq-sm:text-base whitespace-nowrap hover:opacity-90"
+                                className="inline-flex items-center justify-center px-6 py-3 cq-sm:py-4 font-semibold text-white transition-all duration-200 rounded-full text-sm cq-sm:text-base whitespace-nowrap hover:opacity-90"
                                 style={{ backgroundColor: accentColor }}
                             >
                                 {ctaText}
@@ -75,9 +81,11 @@ export function HeroSocialLearning({ props }: { props: HeroSocialLearningProps }
                             </Link>
                         </div>
 
-                        <p className="text-sm cq-sm:text-base text-gray-600 break-words">
+                        <p className={`text-sm cq-sm:text-base break-words ${isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
                             {secondaryText}{" "}
-                            <Link href={secondaryLink} className="text-black transition-all duration-200 hover:underline whitespace-nowrap">
+                            <Link href={secondaryLink} className={`transition-all duration-200 hover:underline whitespace-nowrap ${isDark ? 'text-white' : 'text-black'
+                                }`}>
                                 {secondaryLinkText}
                             </Link>
                         </p>

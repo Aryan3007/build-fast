@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
+import { isLightColor } from "@/lib/utils";
 
 interface PricingTier {
     name: string;
@@ -38,18 +39,22 @@ export function PricingSimple({ props }: { props: PricingSimpleProps }) {
                 features: ["Unlimited Everything", "24/7 Support", "100GB Storage", "Custom Integration"],
             },
         ],
-        bgColor = "#f9fafb",
+        bgColor = "#ffffffff",
         accentColor = "#3b82f6",
     } = props;
+
+    const isDark = !isLightColor(bgColor);
 
     return (
         <section className="py-12 cq-md:py-16 cq-lg:py-24" style={{ backgroundColor: bgColor }}>
             <div className="px-4 mx-auto max-w-7xl cq-sm:px-6 cq-lg:px-8">
                 <div className="text-center mb-8 cq-lg:mb-16">
-                    <h2 className="text-2xl cq-sm:text-3xl cq-lg:text-4xl cq-xl:text-5xl font-bold text-zinc-900 break-words">
+                    <h2 className={`text-2xl cq-sm:text-3xl cq-lg:text-4xl cq-xl:text-5xl font-bold break-words ${isDark ? 'text-white' : 'text-zinc-900'
+                        }`}>
                         {title}
                     </h2>
-                    <p className="mt-3 cq-sm:mt-4 text-sm cq-sm:text-base cq-lg:text-xl break-words max-w-2xl mx-auto" style={{ opacity: 0.8 }}>
+                    <p className={`mt-3 cq-sm:mt-4 text-sm cq-sm:text-base cq-lg:text-xl break-words max-w-2xl mx-auto ${isDark ? 'text-gray-300' : 'text-gray-600'
+                        }`} style={{ opacity: 0.8 }}>
                         {subtitle}
                     </p>
                 </div>
@@ -58,8 +63,8 @@ export function PricingSimple({ props }: { props: PricingSimpleProps }) {
                     {tiers.map((tier, index) => (
                         <div
                             key={index}
-                            className={`bg-white rounded-2xl shadow-lg p-6 cq-lg:p-8 ${tier.highlighted ? "ring-2 transform cq-lg:scale-105" : ""
-                                }`}
+                            className={`rounded-2xl shadow-lg p-6 cq-lg:p-8 ${tier.highlighted ? "ring-2 transform cq-lg:scale-105" : ""
+                                } ${isDark ? 'bg-zinc-800 shadow-none border border-zinc-700' : 'bg-white'}`}
                             style={tier.highlighted ? { borderColor: accentColor } : {}}
                         >
                             {tier.highlighted && (
@@ -67,16 +72,16 @@ export function PricingSimple({ props }: { props: PricingSimpleProps }) {
                                     POPULAR
                                 </div>
                             )}
-                            <h3 className="text-lg cq-lg:text-xl font-bold text-zinc-900">{tier.name}</h3>
+                            <h3 className={`text-lg cq-lg:text-xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{tier.name}</h3>
                             <div className="mt-4 cq-lg:mt-6">
-                                <span className="text-3xl cq-lg:text-4xl font-bold text-zinc-900">{tier.price}</span>
-                                <span className="text-sm cq-lg:text-base text-gray-600">/month</span>
+                                <span className={`text-3xl cq-lg:text-4xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{tier.price}</span>
+                                <span className={`text-sm cq-lg:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>/month</span>
                             </div>
                             <ul className="mt-6 cq-lg:mt-8 space-y-3 cq-lg:space-y-4">
                                 {tier.features.map((feature, idx) => (
                                     <li key={idx} className="flex items-start">
                                         <Check className="h-5 w-5 cq-lg:h-6 cq-lg:w-6 mr-3 flex-shrink-0 mt-0.5" style={{ color: accentColor }} />
-                                        <span className="text-sm cq-lg:text-base text-gray-600 break-words">{feature}</span>
+                                        <span className={`text-sm cq-lg:text-base break-words ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{feature}</span>
                                     </li>
                                 ))}
                             </ul>

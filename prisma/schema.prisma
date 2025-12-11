@@ -20,6 +20,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   sites         Site[]
   userTemplates UserTemplate[]
+  projects      Project[]
 }
 
 model Site {
@@ -89,4 +90,40 @@ model UserTemplate {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?       @db.Text
+  language    String        @default("en")
+  pageCount   Int           @default(3)
+  sitemap     String?       @db.Text // JSON string of sitemap structure
+  subdomain   String?       @unique // Unique subdomain identifier (e.g., "my-project")
+  publishedUrl String?      // Full published URL (e.g., "https://my-project.quickwebsites.com")
+  publishedAt DateTime?     // Timestamp of last publish
+  isPublished Boolean       @default(false) // Published status flag
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages       ProjectPage[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([subdomain])
+}
+
+model ProjectPage {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  slug      String
+  order     Int      @default(0)
+  sections  String   @db.Text // JSON array of section configs with component blocks
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, slug])
+  @@index([projectId])
 }

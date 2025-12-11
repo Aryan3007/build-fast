@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isLightColor } from "@/lib/utils";
 
 interface FooterMinimalProps {
     companyName?: string;
@@ -15,11 +16,14 @@ export function FooterMinimal({ props }: { props: FooterMinimalProps }) {
         accentColor = "#1f2937",
     } = props;
 
+    const isDark = !isLightColor(bgColor);
+
     return (
-        <footer className="border-t" style={{ backgroundColor: bgColor }}>
+        <footer className={`border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`} style={{ backgroundColor: bgColor }}>
             <div className="px-4 py-6 cq-sm:py-8 mx-auto max-w-7xl cq-sm:px-6 cq-lg:px-8">
                 <div className="flex flex-col cq-sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs cq-sm:text-sm text-gray-600">
+                    <p className={`text-xs cq-sm:text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'
+                        }`}>
                         © {new Date().getFullYear()} {companyName}. All rights reserved.
                     </p>
                     <div className="flex gap-4 cq-sm:gap-6">
@@ -27,7 +31,8 @@ export function FooterMinimal({ props }: { props: FooterMinimalProps }) {
                             <Link
                                 key={index}
                                 href="#"
-                                className="text-xs cq-sm:text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                                className={`text-xs cq-sm:text-sm transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                                    }`}
                             >
                                 {link}
                             </Link>

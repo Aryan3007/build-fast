@@ -4,12 +4,45 @@ import { Footer } from "@/components/landing/footer";
 
 // Legacy components (will be migrated)
 import { Hero } from "@/components/landing/hero";
-Pricing,
+import { Pricing } from "@/components/landing/pricing";
+import { FAQ } from "@/components/landing/faq";
+import { Problem } from "@/components/landing/problem";
+import { Comparison } from "@/components/landing/comparison";
+
+// Import all component variations dynamically
+const componentVariations: Record<string, any> = {
+    // Hero variations
+    HeroSocialLearning: dynamic(() => import("@/components/variations/HeroSocialLearning").then(m => m.HeroSocialLearning)),
+    HeroModern: dynamic(() => import("@/components/variations/HeroModern").then(m => m.HeroModern)),
+    HeroMinimal: dynamic(() => import("@/components/variations/HeroMinimal").then(m => m.HeroMinimal)),
+
+    // Features variations
+    FeaturesCards: dynamic(() => import("@/components/variations/FeaturesCards").then(m => m.FeaturesCards)),
+    FeaturesGrid: dynamic(() => import("@/components/variations/FeaturesGrid").then(m => m.FeaturesGrid)),
+
+    // Pricing variations
+    PricingSimple: dynamic(() => import("@/components/variations/PricingSimple").then(m => m.PricingSimple)),
+
+    // Navbar variations
+    NavbarModern: dynamic(() => import("@/components/variations/NavbarModern").then(m => m.NavbarModern)),
+    NavbarMinimal: dynamic(() => import("@/components/variations/NavbarMinimal").then(m => m.NavbarMinimal)),
+    NavbarTransparent: dynamic(() => import("@/components/variations/NavbarTransparent").then(m => m.NavbarTransparent)),
+
+    // Footer variations
+    FooterModern: dynamic(() => import("@/components/variations/FooterModern").then(m => m.FooterModern)),
+    FooterMinimal: dynamic(() => import("@/components/variations/FooterMinimal").then(m => m.FooterMinimal)),
+    FooterSocial: dynamic(() => import("@/components/variations/FooterSocial").then(m => m.FooterSocial)),
+};
+
+// Legacy component map
+const LEGACY_COMPONENT_MAP: Record<string, any> = {
+    Hero,
+    Pricing,
     FAQ,
-    Footer,
     Problem,
     Comparison,
     Navbar,
+    Footer,
 };
 
 interface RendererProps {
@@ -44,7 +77,7 @@ export function Renderer({ content }: RendererProps) {
                     // New system: Use componentFile if available
                     if (block.componentFile && componentVariations[block.componentFile]) {
                         const VariationComponent = componentVariations[block.componentFile];
-                        return <VariationComponent key={index} props={block.props || {}} />;
+                        return <VariationComponent key={index} {...(block.props || {})} />;
                     }
 
                     // Legacy system: Fall back to type-based lookup

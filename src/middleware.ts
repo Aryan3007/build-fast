@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { extractSubdomain } from "./lib/subdomain-utils";
 
 const isPublicRoute = createRouteMatcher([
     "/",
@@ -6,12 +8,27 @@ const isPublicRoute = createRouteMatcher([
     "/sign-up(.*)",
     "/api/webhooks(.*)",
     "/templates(.*)",
-    "/preview(.*)"
+    "/preview(.*)",
+    "/api/public(.*)", // Public API for fetching published projects
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+    const hostname = request.headers.get('host') || '';
+    const subdomain = extractSubdomain(hostname);
+
+    // If there's a subdomain, rewrite to the public subdomain page
+    if (subdomain && !request.nextUrl.pathname.startsWith(`/${subdomain}`)) {
+        console.log(`🌐 Subdomain detected: ${subdomain}`);
+
+        const url = request.nextUrl.clone();
+        url.pathname = `/${subdomain}${url.pathname}`;
+
+        return NextResponse.rewrite(url);
+    }
+
     // Protect non-public routes (including /admin)
-    if (!isPublicRoute(request)) {
+    // Subdomain routes are public
+    if (!isPublicRoute(request) && !subdomain) {
         await auth.protect();
     }
 });

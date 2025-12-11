@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { isLightColor } from "@/lib/utils";
 
 interface NavbarMinimalProps {
     siteName?: string;
@@ -16,12 +17,15 @@ export function NavbarMinimal({ props }: { props: NavbarMinimalProps }) {
         accentColor = "#1f2937",
     } = props;
 
+    const isDark = !isLightColor(bgColor);
+
     return (
-        <nav className="border-b" style={{ backgroundColor: bgColor, borderColor: `${accentColor}20` }}>
+        <nav className={`border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}`} style={{ backgroundColor: bgColor, borderColor: isDark ? `${accentColor}40` : `${accentColor}20` }}>
             <div className="px-4 mx-auto max-w-7xl cq-sm:px-6 cq-lg:px-8">
                 <div className="flex items-center justify-between h-14 cq-sm:h-16">
                     {/* Logo */}
-                    <Link href="/" className="text-base cq-sm:text-lg font-bold text-zinc-900">
+                    <Link href="/" className={`text-base cq-sm:text-lg font-bold ${isDark ? 'text-white' : 'text-zinc-900'
+                        }`}>
                         {siteName}
                     </Link>
 
@@ -31,7 +35,8 @@ export function NavbarMinimal({ props }: { props: NavbarMinimalProps }) {
                             <Link
                                 key={index}
                                 href="#"
-                                className="text-sm cq-lg:text-base text-gray-600 hover:text-gray-900 transition-colors"
+                                className={`text-sm cq-lg:text-base transition-colors ${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                                    }`}
                             >
                                 {item}
                             </Link>
@@ -40,7 +45,7 @@ export function NavbarMinimal({ props }: { props: NavbarMinimalProps }) {
 
                     {/* Mobile Menu Button */}
                     <button className="cq-md:hidden p-2">
-                        <Menu className="h-5 w-5 text-zinc-900" />
+                        <Menu className={`h-5 w-5 ${isDark ? 'text-white' : 'text-zinc-900'}`} />
                     </button>
                 </div>
             </div>
