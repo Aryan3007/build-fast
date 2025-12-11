@@ -13,16 +13,38 @@ export async function GET() {
             );
         }
 
-        // Get user from database
-        const user = await prisma.user.findUnique({
+        // Get user from database, create if doesn't exist
+        let user = await prisma.user.findUnique({
             where: { clerkId: userId },
         });
 
+        // If user doesn't exist, create them
         if (!user) {
-            return NextResponse.json(
-                { success: false, error: "User not found" },
-                { status: 404 }
-            );
+            console.log(`🔄 User not found in DB, creating user: ${userId}`);
+
+            // Import currentUser to get user details from Clerk
+            const { currentUser } = await import("@clerk/nextjs/server");
+            const clerkUser = await currentUser();
+
+            if (!clerkUser) {
+                return NextResponse.json(
+                    { success: false, error: "User not found in Clerk" },
+                    { status: 404 }
+                );
+            }
+
+            // Create user in database
+            user = await prisma.user.create({
+                data: {
+                    clerkId: userId,
+                    email: clerkUser.emailAddresses[0].emailAddress,
+                    name: clerkUser.firstName && clerkUser.lastName
+                        ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                        : null,
+                }
+            });
+
+            console.log(`✅ User created: ${user.email}`);
         }
 
         // Fetch user's projects
@@ -66,16 +88,38 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Get user from database
-        const user = await prisma.user.findUnique({
+        // Get user from database, create if doesn't exist
+        let user = await prisma.user.findUnique({
             where: { clerkId: userId },
         });
 
+        // If user doesn't exist, create them
         if (!user) {
-            return NextResponse.json(
-                { success: false, error: "User not found" },
-                { status: 404 }
-            );
+            console.log(`🔄 User not found in DB, creating user: ${userId}`);
+
+            // Import currentUser to get user details from Clerk
+            const { currentUser } = await import("@clerk/nextjs/server");
+            const clerkUser = await currentUser();
+
+            if (!clerkUser) {
+                return NextResponse.json(
+                    { success: false, error: "User not found in Clerk" },
+                    { status: 404 }
+                );
+            }
+
+            // Create user in database
+            user = await prisma.user.create({
+                data: {
+                    clerkId: userId,
+                    email: clerkUser.emailAddresses[0].emailAddress,
+                    name: clerkUser.firstName && clerkUser.lastName
+                        ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                        : null,
+                }
+            });
+
+            console.log(`✅ User created: ${user.email}`);
         }
 
         const body = await req.json();
