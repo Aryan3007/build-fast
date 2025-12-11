@@ -34,6 +34,31 @@ interface ComponentMapping {
     [key: string]: string
 }
 
+// Pre-define all dynamic component imports to avoid React errors
+const DynamicComponents: Record<string, any> = {
+    // Hero variations
+    HeroSocialLearning: dynamic(() => import("@/components/variations/HeroSocialLearning").then(m => m.HeroSocialLearning)),
+    HeroModern: dynamic(() => import("@/components/variations/HeroModern").then(m => m.HeroModern)),
+    HeroMinimal: dynamic(() => import("@/components/variations/HeroMinimal").then(m => m.HeroMinimal)),
+
+    // Navbar variations
+    NavbarModern: dynamic(() => import("@/components/variations/NavbarModern").then(m => m.NavbarModern)),
+    NavbarMinimal: dynamic(() => import("@/components/variations/NavbarMinimal").then(m => m.NavbarMinimal)),
+    NavbarTransparent: dynamic(() => import("@/components/variations/NavbarTransparent").then(m => m.NavbarTransparent)),
+
+    // Features variations
+    FeaturesGrid: dynamic(() => import("@/components/variations/FeaturesGrid").then(m => m.FeaturesGrid)),
+    FeaturesCards: dynamic(() => import("@/components/variations/FeaturesCards").then(m => m.FeaturesCards)),
+
+    // Pricing variations
+    PricingSimple: dynamic(() => import("@/components/variations/PricingSimple").then(m => m.PricingSimple)),
+
+    // Footer variations
+    FooterModern: dynamic(() => import("@/components/variations/FooterModern").then(m => m.FooterModern)),
+    FooterMinimal: dynamic(() => import("@/components/variations/FooterMinimal").then(m => m.FooterMinimal)),
+    FooterSocial: dynamic(() => import("@/components/variations/FooterSocial").then(m => m.FooterSocial)),
+}
+
 export default function PublishedProjectPage() {
     const params = useParams()
     const projectSlug = params.slug as string
@@ -149,28 +174,18 @@ export default function PublishedProjectPage() {
                 // Priority: 1) componentFile from block, 2) lookup from database, 3) use type as fallback
                 const componentFile = block.componentFile || componentMap[block.type] || block.type
 
-                console.log(`Loading component: ${componentFile} (type: ${block.type}, hasComponentFile: ${!!block.componentFile})`)
+                // Get the pre-defined dynamic component
+                const Component = DynamicComponents[componentFile]
 
-                // Dynamically import the component
-                const Component = dynamic(
-                    () => import(`@/components/variations/${componentFile}`).catch((err) => {
-                        console.error(`Failed to load component: ${componentFile}`, err)
-                        return () => (
-                            <div className="p-8 bg-red-50 border border-red-200">
-                                <p className="text-red-600">Component not found: {componentFile}</p>
-                                <p className="text-xs text-red-500 mt-2">Type: {block.type}</p>
-                            </div>
-                        )
-                    }),
-                    {
-                        loading: () => (
-                            <div className="p-8 flex items-center justify-center">
-                                <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-                            </div>
-                        ),
-                        ssr: false
-                    }
-                )
+                if (!Component) {
+                    console.error(`Component not found: ${componentFile}`)
+                    return (
+                        <div key={block.id || `block-${index}`} className="p-8 bg-red-50 border border-red-200">
+                            <p className="text-red-600">Component not found: {componentFile}</p>
+                            <p className="text-xs text-red-500 mt-2">Type: {block.type}</p>
+                        </div>
+                    )
+                }
 
                 return (
                     <div key={block.id || `block-${index}`}>
