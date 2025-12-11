@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  clerkId       String         @unique
+  email         String         @unique
+  name          String?
+  isAdmin       Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sites         Site[]
+  userTemplates UserTemplate[]
+}
+
+model Site {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  subdomain   String   @unique
+  customDomain String? @unique
+  logo        String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages       Page[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Page {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String
+  content     String   @db.Text // JSON string of the page content
+  published   Boolean  @default(false)
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([siteId, slug])
+  @@index([siteId])
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  thumbnail   String?
+  content     String   @db.Text // JSON string of the page content
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Component {
+  id            String   @id @default(uuid())
+  name          String
+  category      String
+  type          String
+  componentFile String?  // References actual component file name
+  thumbnail     String?
+  props         String   @db.Text
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model UserTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String   @db.Text // JSON string of blocks array
+  thumbnail   String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
