@@ -50,19 +50,41 @@ export default function PublishedProjectPage() {
                 const response = await fetch('/api/components')
                 const data = await response.json()
 
-                if (data.success && data.components) {
-                    // Create a map of type -> componentFile
-                    const map: ComponentMapping = {}
-                    data.components.forEach((comp: any) => {
-                        if (comp.type && comp.componentFile) {
-                            map[comp.type] = comp.componentFile
-                        }
-                    })
-                    setComponentMap(map)
-                    console.log('📦 Component mappings loaded:', map)
+                // Create a map of type -> componentFile
+                const map: ComponentMapping = {}
+
+                // Handle both array response and {success, components} response
+                const components = Array.isArray(data) ? data : (data.components || [])
+
+                components.forEach((comp: any) => {
+                    if (comp.type && comp.componentFile) {
+                        map[comp.type] = comp.componentFile
+                    }
+                })
+
+                // Add fallback mappings for common types (for old projects)
+                if (Object.keys(map).length === 0) {
+                    map['Navbar'] = 'NavbarModern'
+                    map['Hero'] = 'HeroSocialLearning'
+                    map['Features'] = 'FeaturesGrid'
+                    map['Pricing'] = 'PricingSimple'
+                    map['Footer'] = 'FooterModern'
+                    map['CTA'] = 'CTASimple'
                 }
+
+                setComponentMap(map)
+                console.log('📦 Component mappings loaded:', map)
             } catch (err) {
                 console.error('Failed to load component mappings:', err)
+                // Set fallback mappings on error
+                setComponentMap({
+                    'Navbar': 'NavbarModern',
+                    'Hero': 'HeroSocialLearning',
+                    'Features': 'FeaturesGrid',
+                    'Pricing': 'PricingSimple',
+                    'Footer': 'FooterModern',
+                    'CTA': 'CTASimple',
+                })
             }
         }
 
