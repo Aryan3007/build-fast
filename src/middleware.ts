@@ -9,26 +9,13 @@ const isPublicRoute = createRouteMatcher([
     "/api/webhooks(.*)",
     "/templates(.*)",
     "/preview(.*)",
+    "/published(.*)", // Public published projects
     "/api/public(.*)", // Public API for fetching published projects
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-    const hostname = request.headers.get('host') || '';
-    const subdomain = extractSubdomain(hostname);
-
-    // If there's a subdomain, rewrite to the public subdomain page
-    if (subdomain && !request.nextUrl.pathname.startsWith(`/${subdomain}`)) {
-        console.log(`🌐 Subdomain detected: ${subdomain}`);
-
-        const url = request.nextUrl.clone();
-        url.pathname = `/${subdomain}${url.pathname}`;
-
-        return NextResponse.rewrite(url);
-    }
-
-    // Protect non-public routes (including /admin)
-    // Subdomain routes are public
-    if (!isPublicRoute(request) && !subdomain) {
+    // Protect non-public routes
+    if (!isPublicRoute(request)) {
         await auth.protect();
     }
 });

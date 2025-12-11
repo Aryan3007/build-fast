@@ -35,12 +35,14 @@ export function isValidSubdomain(subdomain: string): boolean {
 
 /**
  * Builds the full published URL for a subdomain
+ * Uses path-based routing for Vercel compatibility
  */
 export function buildPublishedUrl(subdomain: string): string {
     const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'localhost:3000';
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
 
-    return `${protocol}://${subdomain}.${baseDomain}`;
+    // Use path-based routing: /published/projectname
+    return `${protocol}://${baseDomain}/published/${subdomain}`;
 }
 
 /**
