@@ -30,13 +30,44 @@ interface Project {
     pages: Page[]
 }
 
+interface ComponentMapping {
+    [key: string]: string
+}
+
 export default function PublishedProjectPage() {
     const params = useParams()
     const projectSlug = params.slug as string
 
     const [project, setProject] = useState<Project | null>(null)
+    const [componentMap, setComponentMap] = useState<ComponentMapping>({})
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    // Fetch component mappings from database
+    useEffect(() => {
+        const fetchComponentMappings = async () => {
+            try {
+                const response = await fetch('/api/components')
+                const data = await response.json()
+
+                if (data.success && data.components) {
+                    // Create a map of type -> componentFile
+                    const map: ComponentMapping = {}
+                    data.components.forEach((comp: any) => {
+                        if (comp.type && comp.componentFile) {
+                            map[comp.type] = comp.componentFile
+                        }
+                    })
+                    setComponentMap(map)
+                    console.log('📦 Component mappings loaded:', map)
+                }
+            } catch (err) {
+                console.error('Failed to load component mappings:', err)
+            }
+        }
+
+        fetchComponentMappings()
+    }, [])
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -93,15 +124,19 @@ export default function PublishedProjectPage() {
     return (
         <div className="min-h-screen bg-white">
             {allBlocks.map((block, index) => {
-                const componentFile = block.componentFile || block.type
+                // Priority: 1) componentFile from block, 2) lookup from database, 3) use type as fallback
+                const componentFile = block.componentFile || componentMap[block.type] || block.type
+
+                console.log(`Loading component: ${componentFile} (type: ${block.type}, hasComponentFile: ${!!block.componentFile})`)
 
                 // Dynamically import the component
                 const Component = dynamic(
-                    () => import(`@/components/variations/${componentFile}`).catch(() => {
-                        console.error(`Failed to load component: ${componentFile}`)
+                    () => import(`@/components/variations/${componentFile}`).catch((err) => {
+                        console.error(`Failed to load component: ${componentFile}`, err)
                         return () => (
                             <div className="p-8 bg-red-50 border border-red-200">
                                 <p className="text-red-600">Component not found: {componentFile}</p>
+                                <p className="text-xs text-red-500 mt-2">Type: {block.type}</p>
                             </div>
                         )
                     }),
