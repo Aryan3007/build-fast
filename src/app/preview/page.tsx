@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { useSearchParams } from "next/navigation"
 
 // Dynamic imports for ALL component variations
 const componentVariations: Record<string, any> = {
@@ -58,7 +57,6 @@ interface Block {
 }
 
 export default function PreviewPage() {
-    const searchParams = useSearchParams()
     const [blocks, setBlocks] = useState<Block[]>([])
     const [loading, setLoading] = useState(true)
 

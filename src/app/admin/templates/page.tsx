@@ -3,6 +3,8 @@ import { FileCode } from "lucide-react";
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
 export default async function TemplatesPage() {
     const templates = await prisma.template.findMany({
         orderBy: { createdAt: 'desc' },

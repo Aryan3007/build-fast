@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 // GET /api/projects/[id] - Get single project
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -27,9 +27,11 @@ export async function GET(
             );
         }
 
+        const { id } = await params;
+
         const project = await prisma.project.findFirst({
             where: {
-                id: params.id,
+                id,
                 userId: user.id,
             },
             include: {
@@ -72,7 +74,7 @@ export async function GET(
 // PUT /api/projects/[id] - Update project
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -97,9 +99,11 @@ export async function PUT(
         const body = await req.json();
         const { name, description, sitemap } = body;
 
+        const { id } = await params;
+
         const project = await prisma.project.updateMany({
             where: {
-                id: params.id,
+                id,
                 userId: user.id,
             },
             data: {
@@ -132,7 +136,7 @@ export async function PUT(
 // DELETE /api/projects/[id] - Delete project
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -154,9 +158,11 @@ export async function DELETE(
             );
         }
 
+        const { id } = await params;
+
         const project = await prisma.project.deleteMany({
             where: {
-                id: params.id,
+                id,
                 userId: user.id,
             },
         });

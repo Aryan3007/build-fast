@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -15,7 +15,7 @@ export async function POST(
             );
         }
 
-        const projectId = params.id;
+        const { id: projectId } = await params;
 
         // Verify project ownership
         const project = await prisma.project.findUnique({

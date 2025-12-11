@@ -27,13 +27,13 @@ export function Selectable({
     const block = blocks.find(b => b.id === blockId)
     const elementStyles = block?.styles?.[elementId] || {}
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = (e: React.MouseEvent<Element>) => {
         e.stopPropagation()
         if (blockId) {
             // Set both the block ID and element ID
             setSelectedBlockId(blockId)
             setSelectedElementId(elementId)
-            if (onClick) onClick(e)
+            if (onClick) onClick(e as React.MouseEvent<HTMLElement>)
         }
     }
 

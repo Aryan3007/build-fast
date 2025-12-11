@@ -4,6 +4,8 @@ import Link from "next/link";
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
 export default async function SitesPage() {
     const sites = await prisma.site.findMany({
         orderBy: { createdAt: 'desc' },

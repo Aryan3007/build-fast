@@ -8,6 +8,7 @@ interface Component {
     name: string;
     category: string;
     type: string;
+    componentFile: string | null;
     thumbnail: string | null;
     props: string;
     description: string | null;
@@ -48,6 +49,7 @@ export function ComponentsManager({ components }: { components: Component[] }) {
             name: "",
             category: "",
             type: "",
+            componentFile: "",
             description: "",
             props: JSON.stringify({}, null, 2),
             thumbnail: "",
@@ -333,7 +335,7 @@ export function ComponentsManager({ components }: { components: Component[] }) {
                                     </div>
 
                                     <button
-                                        onClick={() => handleEdit(selectedComponent)}
+                                        onClick={() => selectedComponent && handleEdit(selectedComponent)}
                                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                                     >
                                         <Pencil className="w-4 h-4" />

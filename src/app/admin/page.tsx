@@ -3,6 +3,8 @@ import { Users, Globe, FileCode, Grid3x3 } from "lucide-react";
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
     // Fetch statistics
     const [usersCount, sitesCount, templatesCount, componentsCount] = await Promise.all([

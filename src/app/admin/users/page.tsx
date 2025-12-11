@@ -3,6 +3,8 @@ import { Shield, ShieldOff } from "lucide-react";
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
 export default async function UsersPage() {
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
