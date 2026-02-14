@@ -28,7 +28,7 @@ export function Navbar() {
                     </SignedOut>
                     <SignedIn>
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href="/dashboard">Dashboard</Link>
+                            <Link href="/projects">Dashboard</Link>
                         </Button>
                         <UserButton />
                     </SignedIn>

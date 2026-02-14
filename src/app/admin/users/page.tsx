@@ -5,7 +5,12 @@ const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
-export default async function UsersPage() {
+export default async function UsersPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+    // searchParams is typed as Promise for Next.js 16 compatibility
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
         include: {

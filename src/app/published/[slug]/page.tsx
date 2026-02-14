@@ -40,23 +40,38 @@ const DynamicComponents: Record<string, any> = {
     HeroSocialLearning: dynamic(() => import("@/components/variations/HeroSocialLearning").then(m => m.HeroSocialLearning)),
     HeroModern: dynamic(() => import("@/components/variations/HeroModern").then(m => m.HeroModern)),
     HeroMinimal: dynamic(() => import("@/components/variations/HeroMinimal").then(m => m.HeroMinimal)),
+    // Base Hero fallback & Aliases
+    Hero: dynamic(() => import("@/components/variations/HeroSocialLearning").then(m => m.HeroSocialLearning)),
+    HeroLearning: dynamic(() => import("@/components/variations/HeroSocialLearning").then(m => m.HeroSocialLearning)),
 
     // Navbar variations
     NavbarModern: dynamic(() => import("@/components/variations/NavbarModern").then(m => m.NavbarModern)),
     NavbarMinimal: dynamic(() => import("@/components/variations/NavbarMinimal").then(m => m.NavbarMinimal)),
     NavbarTransparent: dynamic(() => import("@/components/variations/NavbarTransparent").then(m => m.NavbarTransparent)),
+    // Base Navbar fallback
+    Navbar: dynamic(() => import("@/components/variations/NavbarModern").then(m => m.NavbarModern)),
 
     // Features variations
     FeaturesGrid: dynamic(() => import("@/components/variations/FeaturesGrid").then(m => m.FeaturesGrid)),
     FeaturesCards: dynamic(() => import("@/components/variations/FeaturesCards").then(m => m.FeaturesCards)),
+    // Base Features fallback
+    Features: dynamic(() => import("@/components/variations/FeaturesGrid").then(m => m.FeaturesGrid)),
 
     // Pricing variations
     PricingSimple: dynamic(() => import("@/components/variations/PricingSimple").then(m => m.PricingSimple)),
+    // Base Pricing fallback
+    Pricing: dynamic(() => import("@/components/variations/PricingSimple").then(m => m.PricingSimple)),
 
     // Footer variations
     FooterModern: dynamic(() => import("@/components/variations/FooterModern").then(m => m.FooterModern)),
     FooterMinimal: dynamic(() => import("@/components/variations/FooterMinimal").then(m => m.FooterMinimal)),
     FooterSocial: dynamic(() => import("@/components/variations/FooterSocial").then(m => m.FooterSocial)),
+    // Base Footer fallback
+    Footer: dynamic(() => import("@/components/variations/FooterModern").then(m => m.FooterModern)),
+
+    // CTA Fallbacks (since CTASimple doesn't exist yet, we use HeroMinimal as a fallback)
+    CTASimple: dynamic(() => import("@/components/variations/HeroMinimal").then(m => m.HeroMinimal)),
+    CTA: dynamic(() => import("@/components/variations/HeroMinimal").then(m => m.HeroMinimal)),
 }
 
 export default function PublishedProjectPage() {
@@ -87,18 +102,20 @@ export default function PublishedProjectPage() {
                     }
                 })
 
-                // Add fallback mappings for common types (for old projects)
-                if (Object.keys(map).length === 0) {
-                    map['Navbar'] = 'NavbarModern'
-                    map['Hero'] = 'HeroSocialLearning'
-                    map['Features'] = 'FeaturesGrid'
-                    map['Pricing'] = 'PricingSimple'
-                    map['Footer'] = 'FooterModern'
-                    map['CTA'] = 'CTASimple'
+                // Add fallback mappings for common types
+                // We use these as defaults if the database doesn't provide a mapping
+                const defaults: ComponentMapping = {
+                    'Navbar': 'NavbarModern',
+                    'Hero': 'HeroSocialLearning',
+                    'Features': 'FeaturesGrid',
+                    'Pricing': 'PricingSimple',
+                    'Footer': 'FooterModern',
+                    'CTA': 'CTASimple',
                 }
 
-                setComponentMap(map)
-                console.log('📦 Component mappings loaded:', map)
+                // Merge defaults with loaded map (loaded map takes precedence)
+                setComponentMap({ ...defaults, ...map })
+                console.log('📦 Component mappings loaded:', { ...defaults, ...map })
             } catch (err) {
                 console.error('Failed to load component mappings:', err)
                 // Set fallback mappings on error
@@ -189,7 +206,7 @@ export default function PublishedProjectPage() {
 
                 return (
                     <div key={block.id || `block-${index}`}>
-                        <Component {...block.props} />
+                        <Component props={block.props || {}} />
                     </div>
                 )
             })}

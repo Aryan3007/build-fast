@@ -42,8 +42,10 @@ function SortableBlockWrapper({ block, isSelected, setSelectedBlockId, removeBlo
             ref={setNodeRef}
             style={style}
             onClick={(e) => {
-                e.stopPropagation();
-                setSelectedBlockId(block.id);
+                // The wrapper click is now just a fallback if inner click didn't catch it
+                // But we moved the specific logic to the inner div. 
+                // We still need this for dragging handle/boundary? 
+                // Actually, we can remove the click handler here as the inner div handles it precisely
             }}
             className={cn(
                 "relative group duration-200",
@@ -140,10 +142,54 @@ const DEVICE_FRAMES = [
     { name: "Mobile", width: 375, scale: 0.8 },
 ];
 
+import { ElementToolbar } from "./element-toolbar";
+import { generateUniqueSelector, generateBlockCss } from "@/lib/builder-utils";
+
+function StyleInjector({ blockId, styles }: { blockId: string; styles: Record<string, React.CSSProperties> }) {
+    const css = generateBlockCss(blockId, styles);
+    return <style dangerouslySetInnerHTML={{ __html: css }} />;
+}
+
+function ContentInjector({ blockId, content }: { blockId: string; content: Record<string, string> }) {
+    useEffect(() => {
+        // Find ALL instances of this block (one per device frame)
+        const blocks = document.querySelectorAll(`.${blockId}`);
+        if (blocks.length === 0) return;
+
+        blocks.forEach(block => {
+            // Apply content overrides
+            Object.entries(content).forEach(([selector, text]) => {
+                try {
+                    const el = selector ? block.querySelector(selector) : block;
+                    if (el) {
+                        if ((el as HTMLElement).innerText !== text) {
+                            (el as HTMLElement).innerText = text;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+            });
+        });
+    }, [blockId, content]);
+
+    return null;
+}
+
 export function Canvas() {
-    const { blocks, selectedBlockId, setSelectedBlockId, setSelectedElementId, loadingDropZone, removeBlock, draggingBlockId } = useBuilder();
+    const { blocks, selectedBlockId, setSelectedBlockId, selectedElementId, setSelectedElementId, updateBlockStyles, updateBlockContent, loadingDropZone, removeBlock, draggingBlockId, project } = useBuilder();
     const [scale, setScale] = useState(1);
     const [position, setPosition] = useState({ x: 0, y: 0 });
+
+    // Toolbar State
+    const [toolbarState, setToolbarState] = useState<{
+        position: { x: number, y: number };
+        tagName: string;
+        hasChildren: boolean;
+        initialStyles: React.CSSProperties;
+        initialContent: string;
+    } | null>(null);
+
     const [isDragging, setIsDragging] = useState(false);
     const [isSpacePressed, setIsSpacePressed] = useState(false);
     const [isShiftPressed, setIsShiftPressed] = useState(false);
@@ -228,6 +274,90 @@ export function Canvas() {
         // Deselect everything
         setSelectedBlockId(null);
         setSelectedElementId(null);
+        setToolbarState(null);
+    };
+
+    const handleElementSelect = (e: React.MouseEvent, blockId: string) => {
+        e.stopPropagation();
+
+        // If panning/zooming, ignore selection
+        if (isSpacePressed || isShiftPressed) return;
+
+        const target = e.target as HTMLElement;
+        const wrapper = e.currentTarget as HTMLElement; // This is the div with the block.id class
+
+        // If we clicked the wrapper itself and not a child, just select the block
+        if (target === wrapper) {
+            setSelectedBlockId(blockId);
+            setToolbarState(null);
+            return;
+        }
+
+        const selector = generateUniqueSelector(target, wrapper);
+        console.log('🎯 Selected Element:', selector);
+
+        setSelectedBlockId(blockId);
+        setSelectedElementId(selector);
+
+        // Calculate Position
+        // Calculate Position relative to canvas root (for absolute positioning)
+        const canvasRoot = document.getElementById('canvas-root');
+        const canvasRect = canvasRoot?.getBoundingClientRect() || { top: 0, left: 0 };
+
+        const rect = target.getBoundingClientRect();
+
+        // Get Computed Styles to populate the toolbar
+        const computed = window.getComputedStyle(target);
+
+        // Populate initial toolbar values
+        setToolbarState({
+            position: {
+                x: rect.left - canvasRect.left,
+                y: rect.bottom - canvasRect.top + 10
+            },
+            tagName: target.tagName,
+            hasChildren: target.children.length > 0,
+            initialStyles: {
+                color: computed.color,
+                backgroundColor: computed.backgroundColor,
+                fontSize: computed.fontSize,
+                fontWeight: computed.fontWeight,
+                textAlign: computed.textAlign as React.CSSProperties['textAlign'],
+                borderRadius: computed.borderRadius,
+                padding: computed.padding,
+                margin: computed.margin,
+                borderWidth: computed.borderWidth,
+                borderColor: computed.borderColor,
+                boxShadow: computed.boxShadow,
+            },
+            initialContent: (target.children.length > 0) ? '' : (target.innerText || '')
+        });
+    };
+
+    const handleUpdateStyle = (newStyles: React.CSSProperties) => {
+        if (selectedBlockId && selectedElementId) {
+            updateBlockStyles(selectedBlockId, selectedElementId, newStyles);
+        }
+    };
+
+    const handleUpdateContent = (newContent: string) => {
+        if (selectedBlockId && selectedElementId) {
+            // 1. Update the state (database persistence)
+            updateBlockContent(selectedBlockId, selectedElementId, newContent);
+
+            // 2. Update all visual instances immediately
+            const blockNodes = document.querySelectorAll(`.${selectedBlockId}`);
+            blockNodes.forEach(blockNode => {
+                try {
+                    const element = blockNode.querySelector(selectedElementId);
+                    if (element) {
+                        (element as HTMLElement).innerText = newContent;
+                    }
+                } catch (err) {
+                    // Ignore
+                }
+            });
+        }
     };
 
     // ONLY render components from database with componentFile
@@ -266,7 +396,17 @@ export function Canvas() {
                                     setSelectedBlockId={setSelectedBlockId}
                                     removeBlock={removeBlock}
                                 >
-                                    <VariationComponent props={block.props} blockId={block.id} />
+                                    {/* Inject Dynamic Styles for this block */}
+                                    <StyleInjector blockId={block.id} styles={block.styles || {}} />
+                                    <ContentInjector blockId={block.id} content={block.content || {}} />
+
+                                    {/* Capture clicks on the wrapper to identify elements */}
+                                    <div
+                                        className={`h-full ${block.id}`} // Use class for scoping instead of ID
+                                        onClick={(e) => handleElementSelect(e, block.id)}
+                                    >
+                                        <VariationComponent props={block.props} blockId={block.id} />
+                                    </div>
                                 </SortableBlockWrapper>
                             )}
                         </div>
@@ -294,6 +434,7 @@ export function Canvas() {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onClick={handleCanvasClick}
+            id="canvas-root"
             style={{ cursor: isSpacePressed || isShiftPressed || isDragging ? "grab" : "default" }}
         >
             {/* Zoom Controls */}
@@ -362,7 +503,11 @@ export function Canvas() {
                                                                     setSelectedBlockId={setSelectedBlockId}
                                                                     removeBlock={removeBlock}
                                                                 >
-                                                                    <VariationComponent props={block.props} blockId={block.id} />
+                                                                    <StyleInjector blockId={block.id} styles={block.styles || {}} />
+                                                                    <ContentInjector blockId={block.id} content={block.content || {}} />
+                                                                    <div className={`${block.id}`} onClick={(e) => handleElementSelect(e, block.id)}>
+                                                                        <VariationComponent props={block.props} blockId={block.id} />
+                                                                    </div>
                                                                 </SortableBlockWrapper>
                                                             );
                                                         })}
@@ -381,6 +526,25 @@ export function Canvas() {
                     })}
                 </div>
             </div>
+
+            {/* Element Toolbar Overlay */}
+            {selectedBlockId && selectedElementId && toolbarState && (
+                <ElementToolbar
+                    elementId={selectedElementId}
+                    tagName={toolbarState.tagName}
+                    hasChildren={toolbarState.hasChildren}
+                    initialStyles={toolbarState.initialStyles}
+                    initialContent={toolbarState.initialContent}
+                    position={toolbarState.position}
+                    context={project?.description || "A modern landing page"}
+                    onClose={() => {
+                        setSelectedElementId(null);
+                        setToolbarState(null);
+                    }}
+                    onUpdateStyle={handleUpdateStyle}
+                    onUpdateContent={handleUpdateContent}
+                />
+            )}
 
         </div>
     );

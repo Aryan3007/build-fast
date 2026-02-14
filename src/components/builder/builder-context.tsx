@@ -9,6 +9,7 @@ export interface Block {
     componentFile?: string | null
     props: Record<string, any>
     styles?: Record<string, React.CSSProperties>
+    content?: Record<string, string>
 }
 
 export interface Theme {
@@ -28,6 +29,7 @@ interface BuilderContextType {
     setSelectedElementId: (id: string | null) => void
     updateBlock: (id: string, props: Record<string, any>) => void
     updateBlockStyles: (blockId: string, elementId: string, styles: React.CSSProperties) => void
+    updateBlockContent: (blockId: string, elementId: string, content: string) => void
     reorderBlocks: (activeId: string, overId: string) => void
     moveBlock: (id: string, toIndex: number) => void
     addBlock: (type: string) => void
@@ -48,9 +50,7 @@ interface BuilderContextType {
     project: any | null
     currentPage: string | null
     setCurrentPage: (pageId: string) => void
-    activeTab: "sitemap" | "design"
 
-    setActiveTab: (tab: "sitemap" | "design") => void
     applyTheme: (theme: Theme) => void
 }
 
@@ -70,7 +70,7 @@ export function BuilderProvider({
     const [currentPage, setCurrentPage] = useState<string | null>(
         initialProject?.pages?.[0]?.id || null
     )
-    const [activeTab, setActiveTab] = useState<"sitemap" | "design">("design")
+
 
     // Load blocks from current page
     const [blocks, setBlocks] = useState<Block[]>(() => {
@@ -85,14 +85,16 @@ export function BuilderProvider({
                     type: s.type,
                     componentFile: s.componentFile || s.variant || s.type,
                     props: s.props || { title: s.title, description: s.description },
-                    styles: s.styles || {}
+                    styles: s.styles || {},
+                    content: s.content || {}
                 }))
             }
         }
         return initialBlocks.map((b, i) => ({
             ...b,
             id: b.id || `block-${i}-${Date.now()}`,
-            styles: b.styles || {}
+            styles: b.styles || {},
+            content: b.content || {}
         }))
     })
 
@@ -149,6 +151,22 @@ export function BuilderProvider({
                     styles: {
                         ...currentStyles,
                         [elementId]: { ...(currentStyles[elementId] || {}), ...styles }
+                    }
+                }
+            }
+            return b
+        }))
+    }
+
+    const updateBlockContent = (blockId: string, elementId: string, content: string) => {
+        setBlocksWithHistory(prev => prev.map(b => {
+            if (b.id === blockId) {
+                const currentContent = b.content || {}
+                return {
+                    ...b,
+                    content: {
+                        ...currentContent,
+                        [elementId]: content
                     }
                 }
             }
@@ -373,6 +391,7 @@ export function BuilderProvider({
             setSelectedElementId,
             updateBlock,
             updateBlockStyles,
+            updateBlockContent,
             reorderBlocks,
             moveBlock,
             addBlock,
@@ -392,8 +411,6 @@ export function BuilderProvider({
             project,
             currentPage,
             setCurrentPage,
-            activeTab,
-            setActiveTab,
             applyTheme,
         }}>
             {children}

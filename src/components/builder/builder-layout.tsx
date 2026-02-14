@@ -1,11 +1,11 @@
 "use client"
 
-import { DndContext, closestCenter, pointerWithin, rectIntersection, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, DragStartEvent, DndContextProps } from "@dnd-kit/core"
+import { DndContext, rectIntersection, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core"
 import { useBuilder } from "./builder-context"
 import { LeftSidebar, VariantCard } from "./left-sidebar"
 import { Canvas } from "./canvas"
-import { SitemapView } from "./sitemap-view"
-import { ArrowLeft, Plus, ChevronLeft, Layers, Eye, Sparkles, Undo2, Redo2, Map, ChevronDown } from "lucide-react"
+
+import { ArrowLeft, ChevronLeft, Layers, Eye, Sparkles, Undo2, Redo2, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ComponentLibraryModal } from "./component-library-modal"
@@ -15,12 +15,12 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
 export function BuilderLayout() {
-    const { blocks, reorderBlocks, moveBlock, addComponentFromLibrary, addBlockAtPosition, updateBlock, loadingBlocks, setLoadingDropZone, undo, redo, canUndo, canRedo, activeTab, setActiveTab, project, setDraggingBlockId } = useBuilder()
+    const { blocks, reorderBlocks, moveBlock, addComponentFromLibrary, addBlockAtPosition, updateBlock, setLoadingDropZone, undo, redo, canUndo, canRedo, project, setDraggingBlockId } = useBuilder()
     const [showComponentModal, setShowComponentModal] = useState(false)
     const [showPublishModal, setShowPublishModal] = useState(false)
     const [showLeftSidebar, setShowLeftSidebar] = useState(true)
     const [activeId, setActiveId] = useState<string | null>(null)
-    const [activeVariant, setActiveVariant] = useState<any>(null)
+    const [activeVariant, setActiveVariant] = useState<{ variant: string;[key: string]: unknown } | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
@@ -42,6 +42,7 @@ export function BuilderLayout() {
             // We reconstruct it from data because we don't have the full variant object here easily without prop drilling
             // But we passed everything needed in active.data.current
             setActiveVariant({
+                variant: event.active.data.current.variant || '',
                 name: 'New Component', // Fallback, though we should probably pass this in data too if we want it perfect
                 description: event.active.data.current.variant,
                 // If we want exact visual match, we might need to pass the whole variant object in data
@@ -164,7 +165,8 @@ export function BuilderLayout() {
                         type: b.type,
                         componentFile: b.componentFile,
                         props: b.props,
-                        styles: b.styles || {}
+                        styles: b.styles || {},
+                        content: b.content || {}
                     }))
                 })
             })
@@ -202,48 +204,46 @@ export function BuilderLayout() {
             {/* Main Workspace - Full Screen Canvas */}
             <div className="flex-1 relative overflow-hidden flex flex-col">
 
-                {/* Header Elements (Absolute Overlay) */}
-                <header className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-white/80 backdrop-blur-md shadow-xl border border-zinc-200/50 shadow-sm rounded-full px-4 h-12 flex items-center gap-6 transition-all hover:bg-white hover:shadow-md">
-                    <div className="flex items-center gap-4">
-                        <Link href={project ? "/projects" : "/templates"} className="text-muted-foreground hover:text-foreground">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Link>
-                        <h1 className="font-semibold text-sm whitespace-nowrap">
-                            {project ? project.name : "Template Builder"}
-                        </h1>
+                {/* Header Elements (Absolute Overlay) - Responsive */}
+                <header className="absolute top-2 md:top-4 w-fit left-2 md:left-1/2 md:-translate-x-1/2 right-2 z-40 bg-white/80 backdrop-blur-md shadow-xl border border-zinc-200/50 rounded-full md:rounded-full px-2 md:px-4 py-2 md:py-0 h-auto md:h-12 flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-6 transition-all hover:bg-white hover:shadow-md">
+                    <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-start">
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <Link href={project ? "/projects" : "/templates"} className="text-muted-foreground hover:text-foreground">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Link>
+                            <h1 className="font-semibold text-xs md:text-sm truncate max-w-[120px] md:max-w-none md:whitespace-nowrap">
+                                {project ? project.name : "Template Builder"}
+                            </h1>
+                        </div>
+                        {/* Mobile: Top Right Actions */}
+                        <div className="flex items-center gap-1 md:hidden">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full"
+                                onClick={undo}
+                                disabled={!canUndo}
+                                title="Undo"
+                            >
+                                <Undo2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full"
+                                onClick={redo}
+                                disabled={!canRedo}
+                                title="Redo"
+                            >
+                                <Redo2 className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* Tab Navigation - Only for projects */}
-                    {project && (
-                        <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-full">
-                            <button
-                                onClick={() => setActiveTab("sitemap")}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5",
-                                    activeTab === "sitemap"
-                                        ? "bg-white text-zinc-900 shadow-sm"
-                                        : "text-zinc-600 hover:text-zinc-900"
-                                )}
-                            >
-                                <Map className="h-3.5 w-3.5" />
-                                Sitemap
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("design")}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5",
-                                    activeTab === "design"
-                                        ? "bg-white text-zinc-900 shadow-sm"
-                                        : "text-zinc-600 hover:text-zinc-900"
-                                )}
-                            >
-                                <Layers className="h-3.5 w-3.5" />
-                                Design
-                            </button>
-                        </div>
-                    )}
 
-                    <div className="flex items-center gap-2">
+
+                    {/* Desktop: Action Buttons */}
+                    <div className="hidden md:flex items-center gap-2">
                         {/* Undo/Redo */}
                         <div className="flex items-center gap-1 border-r pr-2">
                             <Button
@@ -275,8 +275,8 @@ export function BuilderLayout() {
                     </div>
                 </header>
 
-                {/* Top Right Actions */}
-                <div className="absolute top-4 right-4 z-50 flex items-center gap-2 h-12">
+                {/* Top Right Actions - Desktop Only */}
+                <div className="hidden md:flex absolute top-4 right-4 z-50 items-center gap-2 h-12">
                     <Button
                         variant="outline"
                         size="sm"
@@ -298,6 +298,32 @@ export function BuilderLayout() {
                     </Button>
                 </div>
 
+                {/* Mobile: Bottom Action Bar */}
+                <div className="md:hidden fixed bottom-4 left-2 right-2 z-50 flex items-center gap-2 bg-white/90 backdrop-blur-md shadow-xl border border-zinc-200/50 rounded-full px-3 py-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full gap-1.5 border-zinc-200 text-zinc-700 bg-white shadow-sm h-9 px-3 flex-1 text-xs"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Save'}
+                    </Button>
+                    <Button
+                        size="sm"
+                        className="rounded-full bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm gap-1.5 h-9 px-3 flex-1 text-xs"
+                        onClick={() => setShowPublishModal(true)}
+                        disabled={!project}
+                    >
+                        <Sparkles className="h-3 w-3 text-amber-400" />
+                        Publish
+                    </Button>
+                    <Button variant="ghost" size="sm" className="rounded-full h-9 w-9 p-0" onClick={handlePreview}>
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                    <ThemeSelector />
+                </div>
+
                 {/* DnD Context - Main Interactive Area */}
                 <DndContext
                     sensors={sensors}
@@ -307,44 +333,52 @@ export function BuilderLayout() {
                     autoScroll={{ threshold: { x: 0.2, y: 0.2 }, acceleration: 10 }}
                 >
                     {/* Content Area with Sidebar and Canvas - Uniform Background */}
-                    <div className="flex-1 flex flex-row overflow-hidden relative bg-zinc-100">
-                        {activeTab === "sitemap" ? (
-                            <SitemapView />
-                        ) : (
-                            <>
-                                {/* Sidebar Flex Container */}
+                    <div className="flex-1 flex flex-row overflow-hidden relative bg-zinc-100 pt-12 md:pt-0 pb-16 md:pb-0">
+                        {/* Sidebar Flex Container - Responsive */}
+                        <div
+                            className={cn(
+                                "relative z-20 transition-all duration-300 ease-in-out h-full flex shrink-0",
+                                // Mobile: Overlay sidebar
+                                "md:relative fixed inset-y-0 left-0",
+                                showLeftSidebar
+                                    ? "md:w-[300px] w-[280px] md:opacity-100 opacity-100 md:ml-4 md:my-4 ml-0 my-0"
+                                    : "md:w-0 w-0 md:opacity-0 opacity-0 md:m-0 m-0 overflow-hidden"
+                            )}
+                        >
+                            {/* Mobile: Backdrop */}
+                            {showLeftSidebar && (
                                 <div
-                                    className={cn(
-                                        "relative z-20 transition-all duration-300 ease-in-out h-full flex shrink-0",
-                                        showLeftSidebar ? "w-[300px] opacity-100 ml-4 my-4" : "w-0 opacity-0 m-0 overflow-hidden"
-                                    )}
-                                >
-                                    <div className="h-full w-full shadow-xl rounded-xl overflow-hidden border border-zinc-200 bg-white">
-                                        <LeftSidebar />
-                                    </div>
-                                </div>
+                                    className="md:hidden fixed inset-0 bg-black/20 z-10"
+                                    onClick={() => setShowLeftSidebar(false)}
+                                />
+                            )}
+                            <div className="h-full w-full shadow-xl md:rounded-xl rounded-none overflow-hidden border border-zinc-200 bg-white relative z-20">
+                                <LeftSidebar />
+                            </div>
+                        </div>
 
-                                {/* Toggle Button - Independent of sidebar clipping */}
-                                <div className={cn(
-                                    "absolute top-1/2 -translate-y-1/2 z-30 transition-all duration-300",
-                                    showLeftSidebar ? "left-[320px]" : "left-4"
-                                )}>
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        className="rounded-full shadow-lg bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 h-8 w-8"
-                                        onClick={() => setShowLeftSidebar(!showLeftSidebar)}
-                                    >
-                                        {showLeftSidebar ? <ChevronLeft className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
-                                    </Button>
-                                </div>
+                        {/* Toggle Button - Responsive */}
+                        <div className={cn(
+                            "absolute top-1/2 -translate-y-1/2 z-30 transition-all duration-300",
+                            // Mobile: Always visible on left edge
+                            "left-2 md:left-auto",
+                            // Desktop: Position based on sidebar state
+                            showLeftSidebar ? "md:left-[320px]" : "md:left-4"
+                        )}>
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                className="rounded-full shadow-lg bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 h-8 w-8 md:h-8 md:w-8"
+                                onClick={() => setShowLeftSidebar(!showLeftSidebar)}
+                            >
+                                {showLeftSidebar ? <ChevronLeft className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+                            </Button>
+                        </div>
 
-                                {/* Canvas Flex Item */}
-                                <div className="flex-1 h-full overflow-hidden relative">
-                                    <Canvas />
-                                </div>
-                            </>
-                        )}
+                        {/* Canvas Flex Item */}
+                        <div className="flex-1 h-full overflow-hidden relative">
+                            <Canvas />
+                        </div>
                     </div>
                     <DragOverlay dropAnimation={null} zIndex={100}>
                         {activeId ? (

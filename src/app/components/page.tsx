@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge"
 
 const prisma = new PrismaClient()
 
-export default async function ComponentsPage() {
+export default async function ComponentsPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+    // searchParams is typed as Promise for Next.js 16 compatibility
     const components = await prisma.component.findMany({
         orderBy: [
             { category: 'asc' },

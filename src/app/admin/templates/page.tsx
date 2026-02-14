@@ -5,7 +5,12 @@ const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
-export default async function TemplatesPage() {
+export default async function TemplatesPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+    // searchParams is typed as Promise for Next.js 16 compatibility
     const templates = await prisma.template.findMany({
         orderBy: { createdAt: 'desc' },
     });

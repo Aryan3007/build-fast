@@ -5,7 +5,12 @@ const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+    searchParams,
+}: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+    // searchParams is typed as Promise for Next.js 16 compatibility
     // Fetch statistics
     const [usersCount, sitesCount, templatesCount, componentsCount] = await Promise.all([
         prisma.user.count(),

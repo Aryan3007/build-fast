@@ -582,3 +582,49 @@ function parsePropsResponse(text: string): Record<string, any> | null {
         return null;
     }
 }
+
+/**
+ * Rewrite text using AI
+ */
+export async function rewriteTextWithAI(
+    text: string,
+    rewriteType: string,
+    context: string
+): Promise<{ success: boolean; text?: string; error?: string }> {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const prompt = `You are an expert copywriter and editor. Your task is to rewrite the following text based on the request.
+
+Original Text: "${text}"
+Rewrite Request: ${rewriteType}
+Project Context: "${context}"
+
+Rules:
+1. Return ONLY the rewritten text.
+2. Do not add quotes around the text unless they are part of the content.
+3. Do not add "Here is the rewritten text" or explain your changes.
+4. Keep the length similar to the original unless asked to shorten/expand.
+5. Ensure the tone matches the context.
+`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        // Clean up any accidental wrapping quotes if the model adds them despite instructions
+        let rewrittenText = response.text().trim();
+        if (rewrittenText.startsWith('"') && rewrittenText.endsWith('"') && text.length > 2 && !text.startsWith('"')) {
+            rewrittenText = rewrittenText.slice(1, -1);
+        }
+
+        return {
+            success: true,
+            text: rewrittenText
+        };
+    } catch (error) {
+        console.error("Text rewrite error:", error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+        };
+    }
+}
