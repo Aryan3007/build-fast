@@ -34,6 +34,16 @@ export default function ProjectBuilderPage() {
         }
     }, [params.id])
 
+    useEffect(() => {
+        // Prevent browser back/forward swipe gestures
+        const originalOverscroll = document.body.style.overscrollBehaviorX
+        document.body.style.overscrollBehaviorX = "none"
+
+        return () => {
+            document.body.style.overscrollBehaviorX = originalOverscroll
+        }
+    }, [])
+
     const fetchProject = async (projectId: string) => {
         try {
             const response = await fetch(`/api/projects/${projectId}`)
